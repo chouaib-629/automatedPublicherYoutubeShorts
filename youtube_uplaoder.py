@@ -13,7 +13,7 @@ def authenticate_drive():
 
 # Authenticate YouTube
 def authenticate_youtube():
-    credentials = Credentials.from_authorized_user_file("youtube_credentials.json", ["https://www.googleapis.com/auth/youtube.upload"])
+    credentials = Credentials.from_authorized_user_file("youtube_token.json", ["https://www.googleapis.com/auth/youtube.upload"])
     return build("youtube", "v3", credentials=credentials)
 
 # Fetch video from Google Drive
@@ -48,7 +48,7 @@ def upload_to_youtube(youtube, video_file, title="Daily Quran Video"):
     os.remove(video_file)  # Delete after upload
 
 if __name__ == "__main__":
-    folder_id = "your-google-drive-folder-id"
+    folder_id = "your-google-drive-folder-id"  # Replace with your folder ID
     drive = authenticate_drive()
     youtube = authenticate_youtube()
     
