@@ -49,7 +49,7 @@ def upload_to_youtube(youtube, video_file, title="صلو على النبي مح�
                 "notifySubscribers": True
             }
         },
-        media_body=MediaFileUpload(video_file)
+        media_body = MediaFileUpload(video_file, )
     )
     response = request.execute()
     print(f"Uploaded: {response['id']}")
@@ -61,4 +61,6 @@ if __name__ == "__main__":
     
     video_file = fetch_random_video_from_drive(drive, folder_id)
     if video_file:
-        upload_to_youtube(youtube, video_file)
+        from datetime import datetime
+        title = f"صلو على النبي محمد 💚💚 - {datetime.now().strftime('%Y-%m-%d')}"
+        upload_to_youtube(youtube, video_file, title)
