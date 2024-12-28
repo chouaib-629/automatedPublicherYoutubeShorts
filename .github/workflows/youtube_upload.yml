@@ -12,9 +12,7 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
-        with:
-          token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
-          
+
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
@@ -23,12 +21,10 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
-      - name: Create client_secrets.json from GitHub Secret
+      - name: Create client_secrets.json and youtube_token.json from GitHub Secrets
         run: |
           echo "${{ secrets.GOOGLE_DRIVE_CREDENTIALS }}" > ./client_secrets.json
-          echo "${{ secrets.YOUTUBE_CREDENTIALS }}" > ./youtube_credentials.json
-        working-directory: ./ # Ensures it's in the script's directory
+          echo "${{ secrets.YOUTUBE_CREDENTIALS }}" > ./client_secrets_youtube.json
 
       - name: Run YouTube uploader
         run: python youtube_uploader.py
-        working-directory: ./ # Ensures the script runs in the correct directory

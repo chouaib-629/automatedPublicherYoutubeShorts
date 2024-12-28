@@ -6,15 +6,23 @@ from googleapiclient.discovery import build
 from googleapiclient.http import MediaFileUpload
 from google.oauth2.credentials import Credentials
 
-# Authenticate Google Drive
+# Authenticate Google Drive using environment variables or file
 def authenticate_drive():
+    # Load the credentials from the environment variable or GitHub Secrets
+    with open("client_secrets.json", "w") as f:
+        f.write(os.environ["GOOGLE_DRIVE_CREDENTIALS"])
+    
     gauth = GoogleAuth()
-    gauth.LocalWebserverAuth()
+    gauth.LoadClientConfigFile("client_secrets.json")
+    gauth.Authorize()
     return GoogleDrive(gauth)
 
-# Authenticate YouTube
+# Authenticate YouTube using environment variables or file
 def authenticate_youtube():
-    credentials = Credentials.from_authorized_user_file("youtube_token.json", ["https://www.googleapis.com/auth/youtube.upload"])
+    with open("client_secrets_youtube.json", "w") as f:
+        f.write(os.environ["YOUTUBE_CREDENTIALS"])
+
+    credentials = Credentials.from_authorized_user_file("client_secrets_youtube.json", ["https://www.googleapis.com/auth/youtube.upload"])
     return build("youtube", "v3", credentials=credentials)
 
 # Fetch a random video from Google Drive
@@ -49,7 +57,7 @@ def upload_to_youtube(youtube, video_file, title="صلو على النبي مح�
                 "notifySubscribers": True
             }
         },
-        media_body = MediaFileUpload(video_file, )
+        media_body=MediaFileUpload(video_file)
     )
     response = request.execute()
     print(f"Uploaded: {response['id']}")
