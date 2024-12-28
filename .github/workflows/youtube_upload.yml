@@ -1,34 +1,31 @@
 name: YouTube Video Uploader
 
 on:
-  schedule:
-    - cron: '30 16 * * *' # Daily at 16:30
-  workflow_dispatch: # Allows manual trigger
+    schedule:
+        - cron: "30 16 * * *" # Daily at 16:30
+    workflow_dispatch: # Allows manual trigger
 
 jobs:
-  upload:
-    runs-on: ubuntu-latest
+    upload:
+        runs-on: ubuntu-latest
 
-    steps:
-      - name: Checkout code from private repo
-        uses: actions/checkout@v3
-        with:
-          repository: chouaib-629/automatedPublicherYoutubeShorts # Replace with your private repo
-          token: ${{ secrets.PERSONAL_ACCESS_TOKEN }} # Use the secret PAT for authentication
+        steps:
+            - name: Checkout code from private repo
+              uses: actions/checkout@v3
+              with:
+                  repository: chouaib-629/automatedPublicherYoutubeShorts # Replace with your private repo
+                  token: ${{ secrets.PERSONAL_ACCESS_TOKEN }} # Use the secret PAT for authentication
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.11'
+            - name: Set up Python
+              uses: actions/setup-python@v4
+              with:
+                  python-version: "3.11"
 
-      - name: Install dependencies
-        run: pip install -r requirements.txt
+            - name: Install dependencies
+              run: pip install -r requirements.txt
 
-      - name: Create client_secrets.json file
-        run: echo "${{ secrets.GOOGLE_CREDENTIALS_JSON }}" > client_secrets.json
-        
-      - name: Run YouTube uploader
-        env:
-          GOOGLE_DRIVE_CREDENTIALS: ${{ secrets.GOOGLE_DRIVE_CREDENTIALS }}
-          YOUTUBE_CREDENTIALS: ${{ secrets.YOUTUBE_CREDENTIALS }}
-        run: python youtube_uploader.py
+            - name: Run YouTube uploader
+              env:
+                  GOOGLE_DRIVE_CREDENTIALS: ${{ secrets.GOOGLE_DRIVE_CREDENTIALS }}
+                  YOUTUBE_CREDENTIALS: ${{ secrets.YOUTUBE_CREDENTIALS }}
+              run: python youtube_uploader.py
