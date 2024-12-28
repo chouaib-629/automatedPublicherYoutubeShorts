@@ -8,9 +8,9 @@ from google.oauth2.credentials import Credentials
 
 # Authenticate Google Drive using environment variables or file
 def authenticate_drive():
-    # Load the credentials from the environment variable or GitHub Secrets
+    google_drive_credentials = os.environ["GOOGLE_DRIVE_CREDENTIALS"]
     with open("client_secrets.json", "w") as f:
-        f.write(os.environ["GOOGLE_DRIVE_CREDENTIALS"])
+        f.write(google_drive_credentials)
     
     gauth = GoogleAuth()
     gauth.LoadClientConfigFile("client_secrets.json")
@@ -19,8 +19,9 @@ def authenticate_drive():
 
 # Authenticate YouTube using environment variables or file
 def authenticate_youtube():
+    youtube_credentials = os.environ["YOUTUBE_CREDENTIALS"]
     with open("client_secrets_youtube.json", "w") as f:
-        f.write(os.environ["YOUTUBE_CREDENTIALS"])
+        f.write(youtube_credentials)
 
     credentials = Credentials.from_authorized_user_file("client_secrets_youtube.json", ["https://www.googleapis.com/auth/youtube.upload"])
     return build("youtube", "v3", credentials=credentials)
