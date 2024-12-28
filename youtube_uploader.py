@@ -14,9 +14,10 @@ def authenticate_drive():
     # Load the credentials as a JSON object and pass it to PyDrive
     client_config = json.loads(google_drive_credentials)
     
+    # Set up PyDrive authentication directly with loaded credentials
     gauth = GoogleAuth()
-    gauth.credentials = client_config  # Directly assign the credentials
-    gauth.Authorize()
+    gauth.credentials = Credentials.from_authorized_user_info(client_config)  # Use in-memory credentials
+    gauth.Authorize()  # Authorize without needing a file
     return GoogleDrive(gauth)
 
 # Authenticate YouTube using credentials loaded directly from environment variables

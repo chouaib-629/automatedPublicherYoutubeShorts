@@ -21,10 +21,8 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
-      - name: Create client_secrets.json and youtube_token.json from GitHub Secrets
-        run: |
-          echo "${{ secrets.GOOGLE_DRIVE_CREDENTIALS }}" > ./client_secrets.json
-          echo "${{ secrets.YOUTUBE_CREDENTIALS }}" > ./client_secrets_youtube.json
-
       - name: Run YouTube uploader
+        env:
+          GOOGLE_DRIVE_CREDENTIALS: ${{ secrets.GOOGLE_DRIVE_CREDENTIALS }}
+          YOUTUBE_CREDENTIALS: ${{ secrets.YOUTUBE_CREDENTIALS }}
         run: python youtube_uploader.py
