@@ -1,9 +1,12 @@
-import os
 import json
+import os
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
 from pydrive.auth import GoogleAuth
 from pydrive.drive import GoogleDrive
+from googleapiclient.http import MediaFileUpload
+import random
+from datetime import datetime
 
 # Authenticate Google Drive using credentials loaded directly from environment variables
 def authenticate_drive():
@@ -17,8 +20,10 @@ def authenticate_drive():
     # Set up PyDrive authentication directly with loaded credentials
     gauth = GoogleAuth()
     gauth.credentials = Credentials.from_authorized_user_info(client_config)  # Use in-memory credentials
-    gauth.Authorize()  # Authorize without needing a file
-    return GoogleDrive(gauth)
+    gauth._client = None  # Ensure that no file-based client is used
+    gauth._loaded = True  # Mark that credentials have been loaded
+    drive = GoogleDrive(gauth)  # Create GoogleDrive object
+    return drive
 
 # Authenticate YouTube using credentials loaded directly from environment variables
 def authenticate_youtube():
@@ -78,6 +83,5 @@ if __name__ == "__main__":
     
     video_file = fetch_random_video_from_drive(drive, folder_id)
     if video_file:
-        from datetime import datetime
         title = f"صلو على النبي محمد 💚💚 - {datetime.now().strftime('%Y-%m-%d')}"
         upload_to_youtube(youtube, video_file, title)
