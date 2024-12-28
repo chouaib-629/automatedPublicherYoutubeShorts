@@ -25,6 +25,12 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
+      - name: Print working directory
+        run: pwd
+        
+      - name: List all files
+        run: ls -R
+
       - name: Run video uploader
         env:
           GOOGLE_DRIVE_CREDENTIALS: ${{ secrets.GOOGLE_DRIVE_CREDENTIALS }}
