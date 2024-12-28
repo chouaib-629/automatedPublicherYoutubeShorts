@@ -1,29 +1,36 @@
 import os
-import random
+import json
+from google.oauth2.credentials import Credentials
+from googleapiclient.discovery import build
 from pydrive.auth import GoogleAuth
 from pydrive.drive import GoogleDrive
-from googleapiclient.discovery import build
-from googleapiclient.http import MediaFileUpload
-from google.oauth2.credentials import Credentials
 
-# Authenticate Google Drive using environment variables or file
+# Authenticate Google Drive using credentials loaded directly from environment variables
 def authenticate_drive():
-    google_drive_credentials = os.environ["GOOGLE_DRIVE_CREDENTIALS"]
-    with open("client_secrets.json", "w") as f:
-        f.write(google_drive_credentials)
+    google_drive_credentials = os.environ.get("GOOGLE_DRIVE_CREDENTIALS")
+    if not google_drive_credentials:
+        raise ValueError("Google Drive credentials not found in environment variables.")
+    
+    # Load the credentials as a JSON object and pass it to PyDrive
+    client_config = json.loads(google_drive_credentials)
     
     gauth = GoogleAuth()
-    gauth.LoadClientConfigFile("client_secrets.json")
+    gauth.credentials = client_config  # Directly assign the credentials
     gauth.Authorize()
     return GoogleDrive(gauth)
 
-# Authenticate YouTube using environment variables or file
+# Authenticate YouTube using credentials loaded directly from environment variables
 def authenticate_youtube():
-    youtube_credentials = os.environ["YOUTUBE_CREDENTIALS"]
-    with open("client_secrets_youtube.json", "w") as f:
-        f.write(youtube_credentials)
-
-    credentials = Credentials.from_authorized_user_file("client_secrets_youtube.json", ["https://www.googleapis.com/auth/youtube.upload"])
+    youtube_credentials = os.environ.get("YOUTUBE_CREDENTIALS")
+    if not youtube_credentials:
+        raise ValueError("YouTube credentials not found in environment variables.")
+    
+    # Load the credentials as a JSON object
+    credentials_info = json.loads(youtube_credentials)
+    
+    # Create credentials object directly from the loaded JSON data
+    credentials = Credentials.from_authorized_user_info(credentials_info, ["https://www.googleapis.com/auth/youtube.upload"])
+    
     return build("youtube", "v3", credentials=credentials)
 
 # Fetch a random video from Google Drive
