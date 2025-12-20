@@ -48,7 +48,7 @@ def fetch_random_video_from_drive(drive, folder_id):
         return None
     video_file = random.choice(file_list)
     video_file.GetContentFile(video_file["title"])  # Download the video file locally
-    return video_file["title"]
+    return video_file
 
 # Upload video to YouTube
 def upload_to_youtube(youtube, video_file, title, description, tags):
@@ -86,9 +86,10 @@ if __name__ == "__main__":
     drive = authenticate_drive()
     youtube = authenticate_youtube()
     
-    video_file = fetch_random_video_from_drive(drive, folder_id)
-    if video_file:
-        video_title = video_file["title"]
+    video_file_obj = fetch_random_video_from_drive(drive, folder_id)
+    if video_file_obj:
+        video_title = video_file_obj["title"]
+        video_path = video_file_obj["title"]
         
         # Parse imam from video title
         imam = None
@@ -118,7 +119,7 @@ if __name__ == "__main__":
         else:
             tags = base_tags
         
-        video_id = upload_to_youtube(youtube, video_file, title, description, tags)
+        video_id = upload_to_youtube(youtube, video_path, title, description, tags)
         
         # Optional: Add to playlist if PLAYLIST_ID is set
         playlist_id = os.environ.get("YOUTUBE_PLAYLIST_ID")
@@ -140,4 +141,4 @@ if __name__ == "__main__":
             except Exception as e:
                 print(f"Failed to add to playlist: {e}")
         
-        os.remove(video_file)  # Clean up the downloaded file
+        os.remove(video_path)  # Clean up the downloaded file
