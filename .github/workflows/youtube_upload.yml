@@ -2,7 +2,7 @@ name: YouTube Video Uploader
 
 on:
     schedule:
-        - cron: "45 19 * * *" # Daily at 19:45
+        - cron: "30 16 * * *" # Daily at 16:30
     workflow_dispatch: # Allows manual trigger
 
 jobs:

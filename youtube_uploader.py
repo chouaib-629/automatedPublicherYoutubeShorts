@@ -5,6 +5,7 @@ from googleapiclient.discovery import build
 from pydrive.auth import GoogleAuth
 from pydrive.drive import GoogleDrive
 from googleapiclient.http import MediaFileUpload
+from oauth2client.client import OAuth2Credentials
 import random
 from datetime import datetime
 
@@ -14,12 +15,12 @@ def authenticate_drive():
     if not google_drive_credentials:
         raise ValueError("Google Drive credentials not found in environment variables.")
     
-    # Load the credentials as a JSON object and pass it to PyDrive
-    client_config = json.loads(google_drive_credentials)
+    # Load the credentials using oauth2client (required for PyDrive)
+    credentials = OAuth2Credentials.from_json(google_drive_credentials)
     
     # Set up PyDrive authentication directly with loaded credentials
     gauth = GoogleAuth()
-    gauth.credentials = Credentials.from_authorized_user_info(client_config)  # Use in-memory credentials
+    gauth.credentials = credentials
     gauth._client = None  # Ensure that no file-based client is used
     gauth._loaded = True  # Mark that credentials have been loaded
     drive = GoogleDrive(gauth)  # Create GoogleDrive object
