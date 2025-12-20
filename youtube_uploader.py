@@ -77,7 +77,7 @@ def upload_to_youtube(youtube, video_file, title="صلو على النبي مح�
     print(f"Uploaded: {response['id']}")
 
 if __name__ == "__main__":
-    folder_id = "1On3DP-7IHF3U_Doc-hWha5q3xYpoP2i9"  # Replace with your folder ID
+    folder_id = os.environ.get("DRIVE_FOLDER_ID", "1On3DP-7IHF3U_Doc-hWha5q3xYpoP2i9")  # Use env var or default
     drive = authenticate_drive()
     youtube = authenticate_youtube()
     
@@ -85,3 +85,4 @@ if __name__ == "__main__":
     if video_file:
         title = f"صلو على النبي محمد 💚💚 - {datetime.now().strftime('%Y-%m-%d')}"
         upload_to_youtube(youtube, video_file, title)
+        os.remove(video_file)  # Clean up the downloaded file
