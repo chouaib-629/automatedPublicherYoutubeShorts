@@ -101,16 +101,16 @@ if __name__ == "__main__":
         # Set dynamic title
         date_str = datetime.now().strftime('%Y-%m-%d')
         if imam:
-            title = f"{imam} - صلو على النبي محمد 💚💚 - {date_str}"
+            title = f"{imam} - صلو على النبي محمد 💚💚 #راحة_نفسية #quran #quranrecitation - {date_str}"
         else:
-            title = f"صلو على النبي محمد 💚💚 - {date_str}"
+            title = f"صلو على النبي محمد 💚💚 #راحة_نفسية #quran #quranrecitation - {date_str}"
         
         # Set dynamic description
         base_desc = "صلو على النبي محمد 💚💚. فيديو قرآني قصير يومي."
         if imam:
-            description = f"{base_desc} تلاوة من {imam}. استمع إلى القرآن الكريم واطمئن روحك. #قرآن #تلاوة #{imam.replace(' ', '')} #إسلام #راحة_نفسية"
+            description = f"{base_desc} تلاوة من {imam}. استمع إلى القرآن الكريم واطمئن روحك. #قرآن #تلاوة #{imam.replace(' ', '')} #راحة_نفسية #quran #quranrecitation #إسلام"
         else:
-            description = f"{base_desc} استمع إلى القرآن الكريم واطمئن روحك. #قرآن #تلاوة #إسلام #راحة_نفسية"
+            description = f"{base_desc} استمع إلى القرآن الكريم واطمئن روحك. #قرآن #تلاوة #راحة_نفسية #quran #quranrecitation #إسلام"
         
         # Set dynamic tags
         base_tags = ["قرآن", "تلاوة", "قرآن كريم", "إسلام", "راحة نفسية", "قرآن يومي", "تلاوة قرآن", "سورة", "آية", "محمد", "نبي"]
