@@ -18,8 +18,17 @@ def authenticate_drive():
     # Load the credentials using oauth2client (required for PyDrive)
     credentials = OAuth2Credentials.from_json(google_drive_credentials)
     
+    # Create client config from credentials
+    client_config = {
+        "installed": {
+            "client_id": credentials.client_id,
+            "client_secret": credentials.client_secret
+        }
+    }
+    
     # Set up PyDrive authentication directly with loaded credentials
     gauth = GoogleAuth()
+    gauth.client_config = client_config
     gauth.credentials = credentials
     gauth._client = None  # Ensure that no file-based client is used
     gauth._loaded = True  # Mark that credentials have been loaded
