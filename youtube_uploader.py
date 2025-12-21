@@ -2,12 +2,11 @@ import json
 import os
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
-from pydrive.auth import GoogleAuth
-from pydrive.drive import GoogleDrive
-from googleapiclient.http import MediaFileUpload
+from googleapiclient.http import MediaIoBaseDownload
 from oauth2client.client import OAuth2Credentials
 import random
 from datetime import datetime
+import io
 
 # Authenticate Google Drive using credentials loaded directly from environment variables
 def authenticate_drive():
@@ -15,25 +14,16 @@ def authenticate_drive():
     if not google_drive_credentials:
         raise ValueError("Google Drive credentials not found in environment variables.")
     
-    # Load the credentials using oauth2client (required for PyDrive)
-    credentials = OAuth2Credentials.from_json(google_drive_credentials)
+    # Load the oauth2client format JSON and convert to google-auth format
+    client_config = json.loads(google_drive_credentials)
+    client_config['token'] = client_config.pop('access_token')  # Rename to match google-auth format
     
-    # Create client config from credentials
-    client_config = {
-        "installed": {
-            "client_id": credentials.client_id,
-            "client_secret": credentials.client_secret
-        }
-    }
+    # Create google-auth credentials
+    creds = Credentials.from_authorized_user_info(client_config)
     
-    # Set up PyDrive authentication directly with loaded credentials
-    gauth = GoogleAuth()
-    gauth.client_config = client_config
-    gauth.credentials = credentials
-    gauth._client = None  # Ensure that no file-based client is used
-    gauth._loaded = True  # Mark that credentials have been loaded
-    drive = GoogleDrive(gauth)  # Create GoogleDrive object
-    return drive
+    # Build Drive service
+    drive_service = build('drive', 'v3', credentials=creds)
+    return drive_service
 
 # Authenticate YouTube using credentials loaded directly from environment variables
 def authenticate_youtube():
@@ -50,13 +40,23 @@ def authenticate_youtube():
     return build("youtube", "v3", credentials=credentials)
 
 # Fetch a random video from Google Drive
-def fetch_random_video_from_drive(drive, folder_id):
-    file_list = drive.ListFile({'q': f"'{folder_id}' in parents and mimeType contains 'video'"}).GetList()
-    if not file_list:
+def fetch_random_video_from_drive(drive_service, folder_id):
+    query = f"'{folder_id}' in parents and mimeType contains 'video'"
+    results = drive_service.files().list(q=query, fields="files(id, name)").execute()
+    files = results.get('files', [])
+    if not files:
         print("No videos found.")
         return None
-    video_file = random.choice(file_list)
-    video_file.GetContentFile(video_file["title"])  # Download the video file locally
+    video_file = random.choice(files)
+    
+    # Download the file
+    request = drive_service.files().get_media(fileId=video_file['id'])
+    with io.FileIO(video_file['name'], 'wb') as fh:
+        downloader = MediaIoBaseDownload(fh, request)
+        done = False
+        while not done:
+            status, done = downloader.next_chunk()
+    
     return video_file
 
 # Upload video to YouTube
@@ -97,8 +97,8 @@ if __name__ == "__main__":
     
     video_file_obj = fetch_random_video_from_drive(drive, folder_id)
     if video_file_obj:
-        video_title = video_file_obj["title"]
-        video_path = video_file_obj["title"]
+        video_title = video_file_obj['name']
+        video_path = video_file_obj['name']
         
         # Parse imam from video title
         imam = None
