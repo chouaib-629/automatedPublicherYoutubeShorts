@@ -1,13 +1,18 @@
-from pydrive.auth import GoogleAuth
-from pydrive.drive import GoogleDrive
+from google_auth_oauthlib.flow import InstalledAppFlow
+import json
 
-gauth = GoogleAuth()
-gauth.LocalWebserverAuth()
+SCOPES = ["https://www.googleapis.com/auth/drive"]
+
+flow = InstalledAppFlow.from_client_secrets_file(
+    "client_secrets_youtube.json", SCOPES
+)
+credentials = flow.run_local_server(port=0)
 
 # Save credentials to file for future use
-gauth.SaveCredentialsFile("googledrive_credentials.json")
+with open("googledrive_credentials.json", "w") as f:
+    f.write(credentials.to_json())
 
-drive = GoogleDrive(gauth)
 print("Authentication successful!")
+print("Credentials saved to googledrive_credentials.json")
 print("Credentials JSON:")
-print(gauth.credentials.to_json())
+print(credentials.to_json())
