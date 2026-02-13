@@ -21,8 +21,32 @@ jobs:
             - name: Install dependencies
               run: pip install -r requirements.txt
 
+            - name: Create YouTube credentials file
+              run: echo '${{ secrets.YOUTUBE_CREDENTIALS_JSON }}' > youtube_credentials.json
+
+            - name: Create Google Drive credentials file
+              run: echo '${{ secrets.GOOGLEDRIVE_CREDENTIALS_JSON }}' > googledrive_credentials.json
+
+            - name: Create settings.yaml for PyDrive
+              run: |
+                cat > settings.yaml << EOF
+                client_config_backend: settings
+                client_config:
+                  client_id: ${{ secrets.GOOGLE_CLIENT_ID }}
+                  client_secret: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+
+                save_credentials: True
+                save_credentials_backend: file
+                save_credentials_file: googledrive_credentials.json
+
+                get_refresh_token: True
+
+                oauth_scope:
+                  - https://www.googleapis.com/auth/drive
+                EOF
+
             - name: Run YouTube uploader
               env:
-                  GOOGLE_DRIVE_CREDENTIALS: ${{ secrets.GOOGLE_DRIVE_CREDENTIALS }}
-                  YOUTUBE_CREDENTIALS: ${{ secrets.YOUTUBE_CREDENTIALS }}
+                  DRIVE_FOLDER_ID: ${{ secrets.DRIVE_FOLDER_ID }}
+                  YOUTUBE_PLAYLIST_ID: ${{ secrets.YOUTUBE_PLAYLIST_ID }}
               run: python youtube_uploader.py

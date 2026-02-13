@@ -1,43 +1,24 @@
 import json
 import os
-from google.oauth2.credentials import Credentials
-from googleapiclient.discovery import build
+from credentials_manager import get_youtube_service, get_drive_service
 from googleapiclient.http import MediaIoBaseDownload, MediaFileUpload
-from oauth2client.client import OAuth2Credentials
 import random
 from datetime import datetime
 import io
 
-# Authenticate Google Drive using credentials loaded directly from environment variables
+# Authenticate Google Drive with automatic token refresh
 def authenticate_drive():
-    google_drive_credentials = os.environ.get("GOOGLE_DRIVE_CREDENTIALS")
-    if not google_drive_credentials:
-        raise ValueError("Google Drive credentials not found in environment variables.")
-    
-    # Load the oauth2client format JSON and convert to google-auth format
-    client_config = json.loads(google_drive_credentials)
-    client_config['token'] = client_config.pop('access_token')  # Rename to match google-auth format
-    
-    # Create google-auth credentials
-    creds = Credentials.from_authorized_user_info(client_config)
-    
-    # Build Drive service
-    drive_service = build('drive', 'v3', credentials=creds)
-    return drive_service
+    try:
+        return get_drive_service()
+    except FileNotFoundError as e:
+        raise ValueError(f"Drive credentials error: {str(e)}")
 
-# Authenticate YouTube using credentials loaded directly from environment variables
+# Authenticate YouTube with automatic token refresh
 def authenticate_youtube():
-    youtube_credentials = os.environ.get("YOUTUBE_CREDENTIALS")
-    if not youtube_credentials:
-        raise ValueError("YouTube credentials not found in environment variables.")
-    
-    # Load the credentials as a JSON object
-    credentials_info = json.loads(youtube_credentials)
-    
-    # Create credentials object directly from the loaded JSON data
-    credentials = Credentials.from_authorized_user_info(credentials_info, ["https://www.googleapis.com/auth/youtube.upload"])
-    
-    return build("youtube", "v3", credentials=credentials)
+    try:
+        return get_youtube_service()
+    except FileNotFoundError as e:
+        raise ValueError(f"YouTube credentials error: {str(e)}")
 
 # Fetch a random video from Google Drive
 def fetch_random_video_from_drive(drive_service, folder_id):
