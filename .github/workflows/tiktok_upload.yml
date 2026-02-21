@@ -1,0 +1,56 @@
+name: Automatic Daily Video Publisher (YouTube + TikTok)
+
+on:
+  schedule:
+    # Run daily at 16:00 UTC (adjust to your timezone)
+    - cron: '0 16 * * *'
+  workflow_dispatch:  # Allows manual trigger
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Create YouTube credentials file
+        run: echo '${{ secrets.YOUTUBE_CREDENTIALS_JSON }}' > youtube_credentials.json
+
+      - name: Create Google Drive credentials file
+        run: echo '${{ secrets.GOOGLEDRIVE_CREDENTIALS_JSON }}' > googledrive_credentials.json
+
+      # YouTube: download a random video from Drive and upload to YouTube.
+      - name: Publish to YouTube
+        env:
+          DRIVE_FOLDER_ID: ${{ secrets.DRIVE_FOLDER_ID }}
+          YOUTUBE_PLAYLIST_ID: ${{ secrets.YOUTUBE_PLAYLIST_ID }}
+        run: |
+          python youtube_uploader.py
+          echo "Video published to YouTube"
+
+      # TikTok: downloads a random video from the same Drive folder and uploads (same logic as YouTube).
+      - name: Publish to TikTok
+        if: ${{ secrets.TIKTOK_ACCESS_TOKEN != '' }}
+        env:
+          DRIVE_FOLDER_ID: ${{ secrets.DRIVE_FOLDER_ID }}
+          TIKTOK_ACCESS_TOKEN: ${{ secrets.TIKTOK_ACCESS_TOKEN }}
+        run: |
+          TITLE=$(date +'%Y-%m-%d Short Video')
+          python tiktok_uploader.py "$TITLE"
+          echo "Video published to TikTok"
+
+      - name: Log completion
+        run: |
+          echo "Daily publish job completed at $(date)"
+          echo "Video uploaded to YouTube (and TikTok if configured)"
