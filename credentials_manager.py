@@ -95,12 +95,22 @@ def get_tiktok_access_token(credentials_file="tiktok_credentials.json"):
         data = json.load(f)
 
     refresh_token = data.get("refresh_token")
-    client_key = data.get("client_key")
-    client_secret = data.get("client_secret")
+    client_key = data.get("client_key") or os.environ.get("TIKTOK_CLIENT_KEY")
+    client_secret = data.get("client_secret") or os.environ.get("TIKTOK_CLIENT_SECRET")
 
-    if not all([refresh_token, client_key, client_secret]):
+    missing = []
+    if not refresh_token:
+        missing.append("refresh_token")
+    if not client_key:
+        missing.append("client_key")
+    if not client_secret:
+        missing.append("client_secret")
+    if missing:
         raise ValueError(
-            "tiktok_credentials.json must contain refresh_token, client_key, and client_secret"
+            "TIKTOK_CREDENTIALS_JSON is missing: %s. "
+            "Add them to the same JSON: client_key and client_secret are in TikTok Developer Portal (your app); "
+            "refresh_token is in the token response you already have."
+            % ", ".join(missing)
         )
 
     body = urllib.parse.urlencode({
