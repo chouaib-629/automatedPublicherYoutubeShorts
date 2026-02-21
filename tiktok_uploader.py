@@ -34,24 +34,87 @@ def download_random_video_from_drive() -> Optional[str]:
         return None
 
 
+API_BASE = "https://open.tiktokapis.com"
+
+
+def _query_creator_info(access_token: str) -> Dict:
+    """Get creator info including privacy_level_options (required for init)."""
+    resp = requests.post(
+        f"{API_BASE}/v2/post/publish/creator_info/query/",
+        headers={
+            "Authorization": f"Bearer {access_token}",
+            "Content-Type": "application/json; charset=UTF-8",
+        },
+        json={},
+        timeout=30,
+    )
+    resp.raise_for_status()
+    data = resp.json()
+    if data.get("error", {}).get("code") != "ok":
+        raise ValueError("Creator info query failed: %s" % data)
+    return data
+
+
+def _init_video_upload(
+    access_token: str,
+    title: str,
+    video_size: int,
+    privacy_level: str = "SELF_ONLY",
+) -> str:
+    """Initialize direct post; returns upload_url."""
+    # Single chunk: whole file
+    chunk_size = video_size
+    total_chunk_count = 1
+    body = {
+        "post_info": {
+            "title": title[:2200] if title else "",
+            "privacy_level": privacy_level,
+        },
+        "source_info": {
+            "source": "FILE_UPLOAD",
+            "video_size": video_size,
+            "chunk_size": chunk_size,
+            "total_chunk_count": total_chunk_count,
+        },
+    }
+    resp = requests.post(
+        f"{API_BASE}/v2/post/publish/video/init/",
+        headers={
+            "Authorization": f"Bearer {access_token}",
+            "Content-Type": "application/json; charset=UTF-8",
+        },
+        json=body,
+        timeout=30,
+    )
+    resp.raise_for_status()
+    data = resp.json()
+    if data.get("error", {}).get("code") != "ok":
+        raise ValueError("Init failed: %s" % data.get("error", data))
+    upload_url = (data.get("data") or {}).get("upload_url")
+    if not upload_url:
+        raise ValueError("No upload_url in response: %s" % data)
+    return upload_url
+
+
+def _put_video(upload_url: str, video_path: str) -> None:
+    """Upload video binary to TikTok upload_url."""
+    size = os.path.getsize(video_path)
+    headers = {
+        "Content-Type": "video/mp4",
+        "Content-Length": str(size),
+        "Content-Range": f"bytes 0-{size - 1}/{size}",
+    }
+    with open(video_path, "rb") as f:
+        resp = requests.put(upload_url, data=f, headers=headers, timeout=120)
+    resp.raise_for_status()
+
+
 def upload_video_via_content_api(video_path: str, title: str, access_token: str, extra: Optional[Dict] = None) -> Dict:
-    """Upload a video to TikTok using the Content Publishing API (scaffold).
+    """Upload a video to TikTok using the Content Posting API (Direct Post).
 
-    Args:
-        video_path: local path to the video file (mp4/vertical recommended)
-        title: caption/title to use for the post
-        access_token: OAuth access token with appropriate publish scope
-        extra: optional dict for additional parameters (e.g., visibility)
-
-    Returns:
-        Parsed JSON response from TikTok (or raises on HTTP error).
-
-    Notes:
-    - This is a scaffold. You must replace `api_base` and follow the exact multipart
-      upload protocol defined by TikTok's Content API (initiate upload, upload chunks,
-      complete upload) — see TikTok developer docs.
-    - If you do not have Content Publishing API access, use manual upload or a 3rd-party
-      scheduling tool.
+    1. Query creator info for privacy_level_options.
+    2. Initialize post (get upload_url).
+    3. PUT video to upload_url.
     """
     if not os.path.exists(video_path):
         raise FileNotFoundError(f"video not found: {video_path}")
@@ -59,23 +122,19 @@ def upload_video_via_content_api(video_path: str, title: str, access_token: str,
     if not access_token:
         raise ValueError("access_token is required for API publishing")
 
-    # Placeholder API base - replace with real endpoint from TikTok docs
-    api_base = "https://open-api.tiktok.com"  # confirm in TikTok docs
+    # Step 1: creator info (required for valid privacy_level)
+    creator = _query_creator_info(access_token)
+    options = (creator.get("data") or {}).get("privacy_level_options") or []
+    privacy_level = options[0] if options else "SELF_ONLY"
 
-    # Example: many content APIs require a multipart/form-data POST to an upload URL.
-    # This simple single-step upload will probably NOT work for production; it's a starting point.
-    url = f"{api_base}/video/upload/?access_token={access_token}"
+    # Step 2: init
+    video_size = os.path.getsize(video_path)
+    upload_url = _init_video_upload(access_token, title, video_size, privacy_level)
 
-    with open(video_path, "rb") as f:
-        files = {"video_file": (os.path.basename(video_path), f, "video/mp4")}
-        data = {"title": title}
-        if extra:
-            data.update(extra)
+    # Step 3: upload
+    _put_video(upload_url, video_path)
 
-        resp = requests.post(url, files=files, data=data, timeout=120)
-
-    resp.raise_for_status()
-    return resp.json()
+    return {"status": "ok", "message": "Video uploaded; post is processing."}
 
 
 def get_access_token(credentials_file: str = "tiktok_credentials.json") -> str:
@@ -124,6 +183,6 @@ if __name__ == "__main__":
             sys.exit(1)
         print(f"Using video from Drive: {video_path}\n")
 
-    print("Uploading... (scaffold)\n")
+    print("Uploading to TikTok (Content Posting API)...\n")
     res = upload_video_via_content_api(video_path, args.title, token)
     print(res)
