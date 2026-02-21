@@ -31,7 +31,6 @@ jobs:
         run: echo '${{ secrets.GOOGLEDRIVE_CREDENTIALS_JSON }}' > googledrive_credentials.json
 
       - name: Create TikTok credentials file
-        if: ${{ secrets.TIKTOK_CREDENTIALS_JSON != '' }}
         run: echo '${{ secrets.TIKTOK_CREDENTIALS_JSON }}' > tiktok_credentials.json
 
       # YouTube: download a random video from Drive and upload to YouTube.
@@ -45,11 +44,15 @@ jobs:
 
       # TikTok: downloads a random video from the same Drive folder and uploads (same logic as YouTube).
       # Uses TIKTOK_CREDENTIALS_JSON (refresh_token, client_key, client_secret); access token is refreshed automatically.
+      # Skips if credentials file is empty (secret not set).
       - name: Publish to TikTok
-        if: ${{ secrets.TIKTOK_CREDENTIALS_JSON != '' }}
         env:
           DRIVE_FOLDER_ID: ${{ secrets.DRIVE_FOLDER_ID }}
         run: |
+          if [ ! -s tiktok_credentials.json ]; then
+            echo "TIKTOK_CREDENTIALS_JSON not set; skipping TikTok."
+            exit 0
+          fi
           TITLE=$(date +'%Y-%m-%d Short Video')
           python tiktok_uploader.py "$TITLE"
           echo "Video published to TikTok"
