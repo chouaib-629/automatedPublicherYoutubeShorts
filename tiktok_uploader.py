@@ -55,19 +55,18 @@ def _query_creator_info(access_token: str) -> Dict:
     return data
 
 
-def _init_video_upload(
+def _init_direct_post(
     access_token: str,
     title: str,
     video_size: int,
     privacy_level: str = "SELF_ONLY",
-) -> str:
-    """Initialize direct post; returns upload_url."""
-    # Single chunk: whole file
+) -> tuple[str, Optional[Dict]]:
+    """Initialize direct post; returns (upload_url, error_dict or None). Does not raise on 403."""
     chunk_size = video_size
     total_chunk_count = 1
     body = {
         "post_info": {
-            "title": title[:2200] if title else "",
+            "title": (title or "")[:2200],
             "privacy_level": privacy_level,
         },
         "source_info": {
@@ -86,10 +85,44 @@ def _init_video_upload(
         json=body,
         timeout=30,
     )
-    resp.raise_for_status()
-    data = resp.json()
+    data = resp.json() if resp.content else {}
+    err = data.get("error") or {}
+    if resp.status_code == 200 and err.get("code") == "ok":
+        upload_url = (data.get("data") or {}).get("upload_url")
+        if upload_url:
+            return upload_url, None
+    return None, {"status_code": resp.status_code, "error": err, "body": data}
+
+
+def _init_inbox_upload(access_token: str, video_size: int) -> str:
+    """Initialize inbox upload (video goes to TikTok inbox; user posts from app). Returns upload_url."""
+    chunk_size = video_size
+    total_chunk_count = 1
+    body = {
+        "source_info": {
+            "source": "FILE_UPLOAD",
+            "video_size": video_size,
+            "chunk_size": chunk_size,
+            "total_chunk_count": total_chunk_count,
+        },
+    }
+    resp = requests.post(
+        f"{API_BASE}/v2/post/publish/inbox/video/init/",
+        headers={
+            "Authorization": f"Bearer {access_token}",
+            "Content-Type": "application/json; charset=UTF-8",
+        },
+        json=body,
+        timeout=30,
+    )
+    data = resp.json() if resp.content else {}
+    if resp.status_code != 200:
+        err = data.get("error") or {}
+        raise ValueError(
+            "TikTok inbox init failed (%s): %s" % (resp.status_code, err.get("message") or err or data)
+        )
     if data.get("error", {}).get("code") != "ok":
-        raise ValueError("Init failed: %s" % data.get("error", data))
+        raise ValueError("TikTok inbox init failed: %s" % data.get("error", data))
     upload_url = (data.get("data") or {}).get("upload_url")
     if not upload_url:
         raise ValueError("No upload_url in response: %s" % data)
@@ -110,11 +143,10 @@ def _put_video(upload_url: str, video_path: str) -> None:
 
 
 def upload_video_via_content_api(video_path: str, title: str, access_token: str, extra: Optional[Dict] = None) -> Dict:
-    """Upload a video to TikTok using the Content Posting API (Direct Post).
+    """Upload a video to TikTok using the Content Posting API.
 
-    1. Query creator info for privacy_level_options.
-    2. Initialize post (get upload_url).
-    3. PUT video to upload_url.
+    Tries Direct Post first; if 403 (e.g. unaudited app), falls back to Inbox upload.
+    Inbox: video goes to the user's TikTok inbox and they post from the app.
     """
     if not os.path.exists(video_path):
         raise FileNotFoundError(f"video not found: {video_path}")
@@ -122,19 +154,42 @@ def upload_video_via_content_api(video_path: str, title: str, access_token: str,
     if not access_token:
         raise ValueError("access_token is required for API publishing")
 
-    # Step 1: creator info (required for valid privacy_level)
+    video_size = os.path.getsize(video_path)
+    upload_url = None
+
+    # Try Direct Post first (requires video.publish; unaudited apps may get 403).
     creator = _query_creator_info(access_token)
     options = (creator.get("data") or {}).get("privacy_level_options") or []
-    privacy_level = options[0] if options else "SELF_ONLY"
+    privacy_level = "SELF_ONLY" if "SELF_ONLY" in options else (options[0] if options else "SELF_ONLY")
 
-    # Step 2: init
-    video_size = os.path.getsize(video_path)
-    upload_url = _init_video_upload(access_token, title, video_size, privacy_level)
+    upload_url, direct_err = _init_direct_post(access_token, title, video_size, privacy_level)
+    if upload_url:
+        _put_video(upload_url, video_path)
+        return {"status": "ok", "message": "Video uploaded; post is processing."}
 
-    # Step 3: upload
-    _put_video(upload_url, video_path)
+    # 403 e.g. unaudited_client_can_only_post_to_private_accounts -> try Inbox
+    if direct_err and direct_err.get("status_code") == 403:
+        err_code = (direct_err.get("error") or {}).get("code") or ""
+        try:
+            upload_url = _init_inbox_upload(access_token, video_size)
+            _put_video(upload_url, video_path)
+            return {
+                "status": "ok",
+                "message": "Video uploaded to your TikTok inbox. Open TikTok app to finish posting.",
+            }
+        except Exception as e:
+            raise ValueError(
+                "Direct Post returned 403 (%s). Inbox fallback also failed: %s. "
+                "For Direct Post: set your TikTok account to private (Settings > Privacy)."
+                % (err_code, e)
+            ) from e
 
-    return {"status": "ok", "message": "Video uploaded; post is processing."}
+    # No upload_url and not 403: raise with TikTok error details
+    err = direct_err or {}
+    raise ValueError(
+        "TikTok init failed: %s (code=%s). Check token and app permissions."
+        % (err.get("error"), err.get("status_code"))
+    )
 
 
 def get_access_token(credentials_file: str = "tiktok_credentials.json") -> str:
