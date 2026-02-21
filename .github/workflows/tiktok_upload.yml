@@ -31,7 +31,15 @@ jobs:
         run: echo '${{ secrets.GOOGLEDRIVE_CREDENTIALS_JSON }}' > googledrive_credentials.json
 
       - name: Create TikTok credentials file
-        run: echo '${{ secrets.TIKTOK_CREDENTIALS_JSON }}' > tiktok_credentials.json
+        env:
+          TIKTOK_CREDENTIALS_JSON: ${{ secrets.TIKTOK_CREDENTIALS_JSON }}
+        run: |
+          python -c "
+          import os
+          s = os.environ.get('TIKTOK_CREDENTIALS_JSON', '')
+          with open('tiktok_credentials.json', 'w') as f:
+              f.write(s)
+          "
 
       # YouTube: download a random video from Drive and upload to YouTube.
       - name: Publish to YouTube
