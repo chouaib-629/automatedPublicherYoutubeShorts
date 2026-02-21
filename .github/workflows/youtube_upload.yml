@@ -1,34 +1,37 @@
 name: Publish to YouTube
 
 on:
-    schedule:
-        - cron: "30 16 * * *" # Daily at 16:30
-    workflow_dispatch: # Allows manual trigger
+  schedule:
+    - cron: "0 16 * * *" # Daily at 16:00 UTC
+  workflow_dispatch: # Allows manual trigger
 
 jobs:
-    upload:
-        runs-on: ubuntu-latest
+  upload:
+    runs-on: ubuntu-latest
 
-        steps:
-            - name: Checkout code
-              uses: actions/checkout@v3
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-            - name: Set up Python
-              uses: actions/setup-python@v4
-              with:
-                  python-version: "3.11"
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
 
-            - name: Install dependencies
-              run: pip install -r requirements.txt
+      - name: Install dependencies
+        run: pip install -r requirements.txt
 
-            - name: Create YouTube credentials file
-              run: echo '${{ secrets.YOUTUBE_CREDENTIALS_JSON }}' > youtube_credentials.json
+      - name: Create Google Drive credentials file
+        run: echo '${{ secrets.GOOGLEDRIVE_CREDENTIALS_JSON }}' > googledrive_credentials.json
+      
+      - name: Create YouTube credentials file
+        run: echo '${{ secrets.YOUTUBE_CREDENTIALS_JSON }}' > youtube_credentials.json
 
-            - name: Create Google Drive credentials file
-              run: echo '${{ secrets.GOOGLEDRIVE_CREDENTIALS_JSON }}' > googledrive_credentials.json
+      - name: Run YouTube uploader
+        env:
+          DRIVE_FOLDER_ID: ${{ secrets.DRIVE_FOLDER_ID }}
+          YOUTUBE_PLAYLIST_ID: ${{ secrets.YOUTUBE_PLAYLIST_ID }}
+        run: python youtube_uploader.py
 
-            - name: Run YouTube uploader
-              env:
-                  DRIVE_FOLDER_ID: ${{ secrets.DRIVE_FOLDER_ID }}
-                  YOUTUBE_PLAYLIST_ID: ${{ secrets.YOUTUBE_PLAYLIST_ID }}
-              run: python youtube_uploader.py
+      - name: Log completion
+        run: echo "YouTube publish job completed at $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
