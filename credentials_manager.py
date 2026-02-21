@@ -75,5 +75,56 @@ def get_drive_service(credentials_file="googledrive_credentials.json"):
     """Get authenticated Google Drive service using Google API Client"""
     creds = load_and_refresh_drive_credentials(credentials_file)
     return build("drive", "v3", credentials=creds)
-    gauth = load_and_refresh_drive_credentials(settings_yaml, credentials_file)
-    return GoogleDrive(gauth)
+
+def get_tiktok_access_token(credentials_file="tiktok_credentials.json"):
+    """
+    Load TikTok credentials from file (refresh_token, client_key, client_secret),
+    refresh to get a new access_token, and return it.
+    TIKTOK_CREDENTIALS_JSON should contain: refresh_token, client_key, client_secret.
+    """
+    import urllib.request
+    import urllib.parse
+    import urllib.error
+
+    if not os.path.exists(credentials_file):
+        raise FileNotFoundError(
+            f"{credentials_file} not found. Set TIKTOK_CREDENTIALS_JSON secret and create the file in the workflow."
+        )
+
+    with open(credentials_file, "r") as f:
+        data = json.load(f)
+
+    refresh_token = data.get("refresh_token")
+    client_key = data.get("client_key")
+    client_secret = data.get("client_secret")
+
+    if not all([refresh_token, client_key, client_secret]):
+        raise ValueError(
+            "tiktok_credentials.json must contain refresh_token, client_key, and client_secret"
+        )
+
+    body = urllib.parse.urlencode({
+        "client_key": client_key,
+        "client_secret": client_secret,
+        "grant_type": "refresh_token",
+        "refresh_token": refresh_token,
+    }).encode("utf-8")
+
+    req = urllib.request.Request(
+        "https://open.tiktokapis.com/v2/oauth/token/",
+        data=body,
+        method="POST",
+        headers={"Content-Type": "application/x-www-form-urlencoded"},
+    )
+
+    try:
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            result = json.loads(resp.read().decode())
+    except urllib.error.HTTPError as e:
+        body = e.read().decode() if e.fp else ""
+        raise ValueError("TikTok token refresh failed (%s): %s" % (e.code, body))
+
+    if "access_token" not in result:
+        raise ValueError("TikTok token refresh failed: %s" % result)
+
+    return result["access_token"]

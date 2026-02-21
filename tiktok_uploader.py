@@ -78,14 +78,18 @@ def upload_video_via_content_api(video_path: str, title: str, access_token: str,
     return resp.json()
 
 
+def get_access_token(credentials_file: str = "tiktok_credentials.json") -> str:
+    """Get a valid access token by loading credentials and refreshing."""
+    from credentials_manager import get_tiktok_access_token
+    return get_tiktok_access_token(credentials_file)
+
+
 def upload_from_config(video_path: str, title: str, config: Optional[Dict] = None) -> Dict:
-    """Helper that reads `TIKTOK_ACCESS_TOKEN` from environment or a provided config dict."""
-    token = None
+    """Helper that gets access_token from credentials file (with refresh) or a provided config dict."""
     if config and "access_token" in config:
         token = config["access_token"]
     else:
-        token = os.environ.get("TIKTOK_ACCESS_TOKEN")
-
+        token = get_access_token()
     return upload_video_via_content_api(video_path, title, token, extra=config.get("extra") if config else None)
 
 
@@ -94,7 +98,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="TikTok uploader: pass title only (video from Drive) or video path + title")
     parser.add_argument("video", nargs="?", help="Path to video file (omit to download a random video from Drive)")
     parser.add_argument("title", nargs="?", help="Post title/caption")
-    parser.add_argument("--token", help="TikTok access token (or set env TIKTOK_ACCESS_TOKEN)")
+    parser.add_argument("--token", help="TikTok access token (optional; default: use tiktok_credentials.json with auto-refresh)")
+    parser.add_argument("--credentials", default="tiktok_credentials.json", help="Path to TikTok credentials JSON")
     args = parser.parse_args()
     # One arg → treat as title and get video from Drive
     if args.title is None and args.video is not None:
@@ -103,9 +108,13 @@ if __name__ == "__main__":
     if not args.title:
         raise SystemExit("Usage: tiktok_uploader.py TITLE   or   tiktok_uploader.py VIDEO_PATH TITLE")
 
-    token = args.token or os.environ.get("TIKTOK_ACCESS_TOKEN")
-    if not token:
-        raise SystemExit("Provide --token or set TIKTOK_ACCESS_TOKEN environment variable")
+    if args.token:
+        token = args.token
+    else:
+        try:
+            token = get_access_token(args.credentials)
+        except FileNotFoundError:
+            raise SystemExit("TikTok credentials file not found. Set TIKTOK_CREDENTIALS_JSON secret or pass --token.")
 
     video_path = args.video
     if not video_path:
