@@ -4,11 +4,3 @@ google-auth-httplib2
 google-api-python-client
 oauth2client
 requests
-
-https://www.tiktok.com/v2/oauth/authorize/?client_key=sbawcgjundj404y79n&scope=user.info.basic,video.publish,video.upload&response_type=code&redirect_uri=https%3A%2F%2Fshimmeringly-aweigh-kati.ngrok-free.dev%2Fcallback&state=abc123
-
-https://www.tiktok.com/v2/auth/authorize/?client_key=sbawcgjundj404y79n&scope=user.info.basic,video.publish,video.upload&response_type=code&redirect_uri=https%3A%2F%2Fshimmeringly-aweigh-kati.ngrok-free.dev%2Fcallback&state=abc123
-
-
-# Replace YOUR_CODE with the exact code from the callback page
-echo 'client_key=sbawcgjundj404y79n&client_secret=1uEF29lS7hun6SRSwTh8VJo6r2nwUe6H&code=eOl---7a2ILQnKEsn1w3X2Ie6THDk_3zPMz2HyXEeVjvfob79e23irhIR4vYX_dcleQJ_tgxTt7nCphVInUg2sYEGh167gtraix9D8fhVRb2xYwHfKL9WppPHLXI-8qweufuQFQRUL9Gn3XDFQzkqPFMjgvDxyUwtxhlKr7zLozNz0uTBA_feSZp2-i1e6lwQY6PXnwdIgToHQtwFf3lBwjmlQDi8fgrUjQMklftGs9b85OPRjgfOGbhMS9HFTM568W6Gf4kX_MZoT0-*v!4745.va&grant_type=authorization_code&redirect_uri=https://shimmeringly-aweigh-kati.ngrok-free.dev/callback' > /tmp/tiktok-token.txt
