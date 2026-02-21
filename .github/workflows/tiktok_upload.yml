@@ -24,9 +24,6 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Create YouTube credentials file
-        run: echo '${{ secrets.YOUTUBE_CREDENTIALS_JSON }}' > youtube_credentials.json
-
       - name: Create Google Drive credentials file
         run: echo '${{ secrets.GOOGLEDRIVE_CREDENTIALS_JSON }}' > googledrive_credentials.json
 
@@ -41,16 +38,7 @@ jobs:
               f.write(s)
           "
 
-      # YouTube: download a random video from Drive and upload to YouTube.
-      - name: Publish to YouTube
-        env:
-          DRIVE_FOLDER_ID: ${{ secrets.DRIVE_FOLDER_ID }}
-          YOUTUBE_PLAYLIST_ID: ${{ secrets.YOUTUBE_PLAYLIST_ID }}
-        run: |
-          python youtube_uploader.py
-          echo "Video published to YouTube"
-
-      # TikTok: downloads a random video from the same Drive folder and uploads (same logic as YouTube).
+      # TikTok only: download a random video from Drive and publish to TikTok.
       # Uses TIKTOK_CREDENTIALS_JSON (refresh_token, client_key, client_secret); access token is refreshed automatically.
       # Skips if credentials file is empty (secret not set).
       - name: Publish to TikTok
@@ -67,5 +55,4 @@ jobs:
 
       - name: Log completion
         run: |
-          echo "Daily publish job completed at $(date)"
-          echo "Video uploaded to YouTube (and TikTok if configured)"
+          echo "TikTok publish job completed at $(date)"
