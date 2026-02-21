@@ -92,6 +92,17 @@ You can change the list of names and the title/description templates in `functio
 
 Website (GitHub Pages): [https://chouaib-629.github.io/automatedPublicherYoutubeShorts/](https://chouaib-629.github.io/automatedPublicherYoutubeShorts/)
 
+### TikTok app review: "This URL is not verified"
+
+TikTok requires **URL verification** before the Web, Terms, and Privacy URLs are accepted. You must use the **URL properties** flow and add TikTok’s signature file to this site:
+
+1. In [TikTok for Developers](https://developers.tiktok.com/) → your app → click **URL properties** (top of the app page).
+2. Choose **Verify by URL prefix** and enter: `https://chouaib-629.github.io/automatedPublicherYoutubeShorts/`
+3. Download the **signature file** TikTok provides, add it to the **`docs/`** folder, then commit and push.
+4. Complete verification in the portal. After that, use the GitHub Pages URLs above for Web, Terms, and Privacy in App details.
+
+See **`docs/README.md`** for step-by-step instructions.
+
 ---
 
 ## License and disclaimer
